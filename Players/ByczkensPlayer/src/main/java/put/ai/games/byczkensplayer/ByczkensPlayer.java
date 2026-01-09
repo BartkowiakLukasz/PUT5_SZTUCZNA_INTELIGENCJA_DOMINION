@@ -22,25 +22,28 @@ public class ByczkensPlayer extends Player {
         }
 
         Move bestMove = moves.get(0);
+        int alpha = -INF;
+        int beta = INF;
         int maxVal = -INF;
-        int depth = 3;
+        int depth = 4;
 
         for (Move m : moves) {
             Board next = b.clone();
             next.doMove(m);
             
-            int val = -negamax(next, depth - 1, getOpponent(getColor()));
+            int val = -negamax(next, depth - 1, -beta, -alpha, getOpponent(getColor()));
             
             if (val > maxVal) {
                 maxVal = val;
                 bestMove = m;
             }
+            alpha = Math.max(alpha, val);
         }
 
         return bestMove;
     }
 
-    private int negamax(Board b, int depth, Color currentPlayer) {
+    private int negamax(Board b, int depth, int alpha, int beta, Color currentPlayer) {
         List<Move> moves = b.getMovesFor(currentPlayer);
         
         if (depth == 0 || moves.isEmpty()) {
@@ -52,9 +55,15 @@ public class ByczkensPlayer extends Player {
             Board next = b.clone();
             next.doMove(m);
             
-            int val = -negamax(next, depth - 1, getOpponent(currentPlayer));
+            int val = -negamax(next, depth - 1, -beta, -alpha, getOpponent(currentPlayer));
+            
             if (val > maxVal) {
                 maxVal = val;
+            }
+            
+            alpha = Math.max(alpha, val);
+            if (alpha >= beta) {
+                break;
             }
         }
         return maxVal;
