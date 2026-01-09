@@ -7,6 +7,8 @@ import put.ai.games.game.Player;
 
 public class ByczkensPlayer extends Player {
 
+    private static final int INF = 1000000000;
+
     @Override
     public String getName() {
         return "Lukasz Bartkowiak 160219 Michal Byczko 160141";
@@ -15,11 +17,70 @@ public class ByczkensPlayer extends Player {
     @Override
     public Move nextMove(Board b) {
         List<Move> moves = b.getMovesFor(getColor());
+        if (moves.isEmpty()) {
+            return null;
+        }
+
+        Move bestMove = moves.get(0);
+        int maxVal = -INF;
+        int depth = 3;
+
+        for (Move m : moves) {
+            Board next = b.clone();
+            next.doMove(m);
+            
+            int val = -negamax(next, depth - 1, getOpponent(getColor()));
+            
+            if (val > maxVal) {
+                maxVal = val;
+                bestMove = m;
+            }
+        }
+
+        return bestMove;
+    }
+
+    private int negamax(Board b, int depth, Color currentPlayer) {
+        List<Move> moves = b.getMovesFor(currentPlayer);
         
-        if (!moves.isEmpty()) {
-            return moves.get(0);
+        if (depth == 0 || moves.isEmpty()) {
+            return evaluate(b, currentPlayer);
+        }
+
+        int maxVal = -INF;
+        for (Move m : moves) {
+            Board next = b.clone();
+            next.doMove(m);
+            
+            int val = -negamax(next, depth - 1, getOpponent(currentPlayer));
+            if (val > maxVal) {
+                maxVal = val;
+            }
+        }
+        return maxVal;
+    }
+
+    private int evaluate(Board b, Color player) {
+        int size = b.getSize();
+        int myCount = 0;
+        int oppCount = 0;
+        Color opp = getOpponent(player);
+
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                Color s = b.getState(r, c);
+                if (s == player) {
+                    myCount++;
+                } else if (s == opp) {
+                    oppCount++;
+                }
+            }
         }
         
-        return null;
+        return myCount - oppCount;
+    }
+
+    private Color getOpponent(Color player) {
+        return (player == Color.PLAYER1) ? Color.PLAYER2 : Color.PLAYER1;
     }
 }
