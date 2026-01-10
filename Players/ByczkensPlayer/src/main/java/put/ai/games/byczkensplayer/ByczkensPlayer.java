@@ -14,6 +14,10 @@ public class ByczkensPlayer extends Player {
     private static final long TIME_BUFFER_MEDIUM = 200;
     private static final long TIME_BUFFER_SHORT = 50;
 
+    private final int cornerValue = 4927;
+    private final int edgeBonus = 19;
+    private final int tempMaterialWeight = 100;
+
     @Override
     public String getName() {
         return "Lukasz Bartkowiak 160219 Michal Byczko 160141";
@@ -31,28 +35,21 @@ public class ByczkensPlayer extends Player {
 
         try {
             while (true) {
-                if (System.currentTimeMillis() > deadline) {
-                    break;
-                }
+                if (System.currentTimeMillis() > deadline) break;
 
                 Move val = negamaxRoot(b, currentDepth, deadline);
                 if (val != null) {
                     bestMove = val;
                 }
                 currentDepth++;
-                
-                if (currentDepth > maxDepth) {
-                    break;
-                }
+                if (currentDepth > maxDepth) break;
             }
         } catch (TimeoutException e) {
         }
 
         if (bestMove == null) {
             List<Move> m = b.getMovesFor(getColor());
-            if (!m.isEmpty()) {
-                bestMove = m.get(0);
-            }
+            if (!m.isEmpty()) bestMove = m.get(0);
         }
 
         return bestMove;
@@ -74,9 +71,7 @@ public class ByczkensPlayer extends Player {
         int maxVal = -INF;
 
         for (Move m : moves) {
-            if (System.currentTimeMillis() > deadline) {
-                throw new TimeoutException();
-            }
+            if (System.currentTimeMillis() > deadline) throw new TimeoutException();
 
             Board next = b.clone();
             next.doMove(m);
@@ -93,9 +88,7 @@ public class ByczkensPlayer extends Player {
     }
 
     private int negamax(Board b, int depth, int alpha, int beta, Color lastPlayer, long deadline) throws TimeoutException {
-        if (System.currentTimeMillis() > deadline) {
-            throw new TimeoutException();
-        }
+        if (System.currentTimeMillis() > deadline) throw new TimeoutException();
 
         Color currentPlayer = (lastPlayer == Color.PLAYER1) ? Color.PLAYER2 : Color.PLAYER1;
         List<Move> moves = b.getMovesFor(currentPlayer);
@@ -115,9 +108,7 @@ public class ByczkensPlayer extends Player {
                 maxVal = val;
             }
             alpha = Math.max(alpha, val);
-            if (alpha >= beta) {
-                break;
-            }
+            if (alpha >= beta) break;
         }
         return maxVal;
     }
@@ -126,19 +117,48 @@ public class ByczkensPlayer extends Player {
         int size = b.getSize();
         int myCount = 0;
         int oppCount = 0;
+        
+        Color me = player;
         Color opp = (player == Color.PLAYER1) ? Color.PLAYER2 : Color.PLAYER1;
+        Color[][] grid = new Color[size][size];
 
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 Color s = b.getState(r, c);
-                if (s == player) {
-                    myCount++;
-                } else if (s == opp) {
-                    oppCount++;
+                grid[r][c] = s;
+                if (s == me) myCount++;
+                else if (s == opp) oppCount++;
+            }
+        }
+
+        int score = 0;
+        
+        int meat = myCount - oppCount;
+        score += meat * tempMaterialWeight;
+
+        int[] cornersR = { 0, 0, size - 1, size - 1 };
+        int[] cornersC = { 0, size - 1, 0, size - 1 };
+
+        for (int i = 0; i < 4; i++) {
+            Color s = grid[cornersR[i]][cornersC[i]];
+            if (s != Color.EMPTY) {
+                if (s == me) score += cornerValue;
+                else score -= cornerValue;
+            }
+        }
+
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                Color s = grid[r][c];
+                if (s != Color.EMPTY) {
+                    if (r == 0 || r == size - 1 || c == 0 || c == size - 1) {
+                        if (s == me) score += edgeBonus;
+                        else score -= edgeBonus;
+                    }
                 }
             }
         }
-        
-        return myCount - oppCount;
+
+        return score;
     }
 }
