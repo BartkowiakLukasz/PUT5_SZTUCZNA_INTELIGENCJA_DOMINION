@@ -1,10 +1,13 @@
 package put.ai.games.byczkensplayer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import put.ai.games.game.Board;
 import put.ai.games.game.Move;
 import put.ai.games.game.Player;
+import put.ai.games.game.moves.MoveMove;
+import put.ai.games.game.moves.PlaceMove;
 
 public class ByczkensPlayer extends Player {
 
@@ -22,6 +25,9 @@ public class ByczkensPlayer extends Player {
     private final int mobilityWeight = 33;
     private final int edgeBonus = 19;
     private final int tempMaterialWeight = 100;
+    
+    private final int cloneBonus = 203;
+    private final int captureMultiplier = 74;
 
     @Override
     public String getName() {
@@ -70,6 +76,8 @@ public class ByczkensPlayer extends Player {
         List<Move> moves = b.getMovesFor(getColor());
         if (moves.isEmpty()) return null;
 
+        sortMoves(moves, b, getColor());
+
         Move best = moves.get(0);
         int alpha = -INF;
         int beta = INF;
@@ -102,6 +110,10 @@ public class ByczkensPlayer extends Player {
             return evaluate(b, currentPlayer);
         }
 
+        if (depth > 1) {
+            sortMoves(moves, b, currentPlayer);
+        }
+
         int maxVal = -INF;
         for (Move m : moves) {
             Board next = b.clone();
@@ -116,6 +128,58 @@ public class ByczkensPlayer extends Player {
             if (alpha >= beta) break;
         }
         return maxVal;
+    }
+
+    private void sortMoves(List<Move> moves, Board b, Color player) {
+        Collections.sort(moves, (m1, m2) -> {
+            int v1 = estimateMoveValue(m1, b, player);
+            int v2 = estimateMoveValue(m2, b, player);
+            return v2 - v1;
+        });
+    }
+
+    private int estimateMoveValue(Move m, Board b, Color player) {
+        int val = 0;
+        int rDst = -1, cDst = -1;
+
+        if (m instanceof PlaceMove) {
+            PlaceMove pm = (PlaceMove) m;
+            rDst = pm.getX();
+            cDst = pm.getY();
+            val += cloneBonus;
+        } else if (m instanceof MoveMove) {
+            MoveMove mm = (MoveMove) m;
+            rDst = mm.getDstX();
+            cDst = mm.getDstY();
+        }
+
+        if (rDst != -1) {
+            int size = b.getSize();
+            if ((rDst == 0 || rDst == size - 1) && (cDst == 0 || cDst == size - 1)) {
+                val += cornerValue / 5;
+            }
+
+            int caps = countCaptures(b, rDst, cDst, player);
+            val += caps * captureMultiplier;
+        }
+        return val;
+    }
+
+    private int countCaptures(Board b, int r, int c, Color player) {
+        int size = b.getSize();
+        int count = 0;
+        Color enemy = (player == Color.PLAYER1) ? Color.PLAYER2 : Color.PLAYER1;
+
+        for (int i = 0; i < 8; i++) {
+            int tr = r + D_ROW[i];
+            int tc = c + D_COL[i];
+            if (isValid(tr, tc, size)) {
+                if (b.getState(tr, tc) == enemy) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     private int evaluate(Board b, Color player) {
@@ -177,7 +241,6 @@ public class ByczkensPlayer extends Player {
                     if (adjOpp) oppMob++;
 
                 } else {
-                    // Bonus za krawędź
                     if (r == 0 || r == size - 1 || c == 0 || c == size - 1) {
                         if (s == me) score += edgeBonus;
                         else score -= edgeBonus;
