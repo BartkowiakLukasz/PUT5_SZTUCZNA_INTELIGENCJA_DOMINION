@@ -14,7 +14,12 @@ public class ByczkensPlayer extends Player {
     private static final long TIME_BUFFER_MEDIUM = 200;
     private static final long TIME_BUFFER_SHORT = 50;
 
+    private static final int[] D_ROW = { -1, -1, -1, 0, 0, 1, 1, 1 };
+    private static final int[] D_COL = { -1, 0, 1, -1, 1, -1, 0, 1 };
+
     private final int cornerValue = 4927;
+    private final int deathZonePenalty = 4109;
+    private final int mobilityWeight = 33;
     private final int edgeBonus = 19;
     private final int tempMaterialWeight = 100;
 
@@ -120,6 +125,7 @@ public class ByczkensPlayer extends Player {
         
         Color me = player;
         Color opp = (player == Color.PLAYER1) ? Color.PLAYER2 : Color.PLAYER1;
+
         Color[][] grid = new Color[size][size];
 
         for (int r = 0; r < size; r++) {
@@ -147,10 +153,31 @@ public class ByczkensPlayer extends Player {
             }
         }
 
+        int myMob = 0;
+        int oppMob = 0;
+
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
                 Color s = grid[r][c];
-                if (s != Color.EMPTY) {
+
+                if (s == Color.EMPTY) {
+                    boolean adjMe = false;
+                    boolean adjOpp = false;
+                    for (int k = 0; k < 8; k++) {
+                        int tr = r + D_ROW[k];
+                        int tc = c + D_COL[k];
+                        if (isValid(tr, tc, size)) {
+                            Color neighbor = grid[tr][tc];
+                            if (neighbor == me) adjMe = true;
+                            else if (neighbor == opp) adjOpp = true;
+                        }
+                        if (adjMe && adjOpp) break;
+                    }
+                    if (adjMe) myMob++;
+                    if (adjOpp) oppMob++;
+
+                } else {
+                    // Bonus za krawędź
                     if (r == 0 || r == size - 1 || c == 0 || c == size - 1) {
                         if (s == me) score += edgeBonus;
                         else score -= edgeBonus;
@@ -159,6 +186,39 @@ public class ByczkensPlayer extends Player {
             }
         }
 
+        for (int k = 0; k < 4; k++) {
+            int cr = cornersR[k];
+            int cc = cornersC[k];
+
+            if (grid[cr][cc] == Color.EMPTY) {
+                int rDir = (cr == 0) ? 1 : -1;
+                int cDir = (cc == 0) ? 1 : -1;
+
+                int[][] dangerSpots = {
+                        { cr + rDir, cc },
+                        { cr, cc + cDir },
+                        { cr + rDir, cc + cDir }
+                };
+
+                for (int[] d : dangerSpots) {
+                    int dr = d[0];
+                    int dc = d[1];
+                    if (isValid(dr, dc, size) && grid[dr][dc] != Color.EMPTY) {
+                        Color owner = grid[dr][dc];
+                        if (owner == me) score -= deathZonePenalty;
+                        else score += deathZonePenalty;
+                    }
+                }
+            }
+        }
+
+        int mobDiff = myMob - oppMob;
+        score += mobDiff * mobilityWeight;
+
         return score;
+    }
+
+    private boolean isValid(int r, int c, int size) {
+        return r >= 0 && r < size && c >= 0 && c < size;
     }
 }
