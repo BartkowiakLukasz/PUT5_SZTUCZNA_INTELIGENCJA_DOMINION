@@ -20,14 +20,15 @@ public class ByczkensPlayer extends Player {
     private static final int[] D_ROW = { -1, -1, -1, 0, 0, 1, 1, 1 };
     private static final int[] D_COL = { -1, 0, 1, -1, 1, -1, 0, 1 };
 
-    private final int cornerValue = 4927;
-    private final int deathZonePenalty = 4109;
-    private final int mobilityWeight = 33;
-    private final int edgeBonus = 19;
-    private final int tempMaterialWeight = 100;
-    
-    private final int cloneBonus = 203;
-    private final int captureMultiplier = 74;
+    private final ByczkensWeights weights;
+
+    public ByczkensPlayer() {
+        this.weights = new ByczkensWeights();
+    }
+
+    public ByczkensPlayer(ByczkensWeights weights) {
+        this.weights = weights;
+    }
 
     @Override
     public String getName() {
@@ -134,7 +135,7 @@ public class ByczkensPlayer extends Player {
         Collections.sort(moves, (m1, m2) -> {
             int v1 = estimateMoveValue(m1, b, player);
             int v2 = estimateMoveValue(m2, b, player);
-            return v2 - v1;
+            return v2 - v1; 
         });
     }
 
@@ -146,7 +147,7 @@ public class ByczkensPlayer extends Player {
             PlaceMove pm = (PlaceMove) m;
             rDst = pm.getX();
             cDst = pm.getY();
-            val += cloneBonus;
+            val += weights.cloneBonus;
         } else if (m instanceof MoveMove) {
             MoveMove mm = (MoveMove) m;
             rDst = mm.getDstX();
@@ -156,11 +157,11 @@ public class ByczkensPlayer extends Player {
         if (rDst != -1) {
             int size = b.getSize();
             if ((rDst == 0 || rDst == size - 1) && (cDst == 0 || cDst == size - 1)) {
-                val += cornerValue / 5;
+                val += weights.cornerValue / 5;
             }
 
             int caps = countCaptures(b, rDst, cDst, player);
-            val += caps * captureMultiplier;
+            val += caps * weights.captureMultiplier;
         }
         return val;
     }
@@ -204,7 +205,7 @@ public class ByczkensPlayer extends Player {
         int score = 0;
         
         int meat = myCount - oppCount;
-        score += meat * tempMaterialWeight;
+        score += meat * weights.lowFullnessMaterialWeight;
 
         int[] cornersR = { 0, 0, size - 1, size - 1 };
         int[] cornersC = { 0, size - 1, 0, size - 1 };
@@ -212,8 +213,8 @@ public class ByczkensPlayer extends Player {
         for (int i = 0; i < 4; i++) {
             Color s = grid[cornersR[i]][cornersC[i]];
             if (s != Color.EMPTY) {
-                if (s == me) score += cornerValue;
-                else score -= cornerValue;
+                if (s == me) score += weights.cornerValue;
+                else score -= weights.cornerValue;
             }
         }
 
@@ -242,8 +243,8 @@ public class ByczkensPlayer extends Player {
 
                 } else {
                     if (r == 0 || r == size - 1 || c == 0 || c == size - 1) {
-                        if (s == me) score += edgeBonus;
-                        else score -= edgeBonus;
+                        if (s == me) score += weights.edgeBonus;
+                        else score -= weights.edgeBonus;
                     }
                 }
             }
@@ -268,15 +269,15 @@ public class ByczkensPlayer extends Player {
                     int dc = d[1];
                     if (isValid(dr, dc, size) && grid[dr][dc] != Color.EMPTY) {
                         Color owner = grid[dr][dc];
-                        if (owner == me) score -= deathZonePenalty;
-                        else score += deathZonePenalty;
+                        if (owner == me) score -= weights.deathZonePenalty;
+                        else score += weights.deathZonePenalty;
                     }
                 }
             }
         }
 
         int mobDiff = myMob - oppMob;
-        score += mobDiff * mobilityWeight;
+        score += mobDiff * weights.mobilityWeight;
 
         return score;
     }
