@@ -19,20 +19,21 @@ public class ByczkensWeights {
         this.cornerValue = 4927; 
         this.deathZonePenalty = 4109; 
 
+
         this.materialWeight = 1525; 
-        this.lowFullnessMaterialWeight = 100; 
+        this.lowFullnessMaterialWeight = 100;
         this.fullnessThreshold = 0.68; 
 
         this.mobilityWeight = 33; 
         this.mobilityThreshold = 0.98; 
 
-        this.edgeBonus = 19; 
+        this.edgeBonus = 19;
         this.clusteringBonus = 16; 
 
         this.cloneBonus = 203; 
         this.captureMultiplier = 74; 
 
-        this.opponentMobilityWeight = 23; 
+        this.opponentMobilityWeight = 23;
     }
 
     public ByczkensWeights(int cornerValue, int mobilityWeight, int cloneBonus, int deathZonePenalty,
