@@ -1,6 +1,6 @@
 # Dominion AI - ByczkensPlayer 🐂
 
-Projekt sztucznej inteligencji do gry planszowej **Dominion** (abstrakcyjna gra strategiczna). Bot został zoptymalizowany pod kątem szybkiego przeszukiwania drzewa gry oraz zaawansowanej oceny sytuacji na planszy, a jego parametry zostały wyuczone za pomocą algorytmu genetycznego.
+Projekt sztucznej inteligencji do gry planszowej **Dominion** https://jpneto.github.io/world_abstract_games/dominion. (abstrakcyjna gra strategiczna). Bot został zoptymalizowany pod kątem szybkiego przeszukiwania drzewa gry oraz zaawansowanej oceny sytuacji na planszy, a jego parametry zostały wyuczone za pomocą algorytmu genetycznego.
 
 ## 👨‍💻 Autorzy
 * Łukasz Bartkowiak (160219)
